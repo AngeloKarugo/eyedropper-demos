@@ -85,7 +85,7 @@
 			text-align: center;
 		}
 
-		.score-timer {
+		.game-timer {
 			font-size: 1.75rem;
 			color: oklch(0.527 0.154 150.069);
 			position: absolute;
@@ -98,7 +98,7 @@
 <body>
 	<div class="score-wrapper">
 		<div class="score"></div>
-		<div class="score-timer"></div>
+		<div class="game-timer"></div>
 	</div>
 
 	<div class="wrapper">
@@ -120,7 +120,7 @@
 
 		const ROUND_MAX_TIME = 10 * 1000; // 10 seconds per round.
 		const MAX_COLORS = 40; // 20 colors to choose from.
-		const GAME_TIME = 60 * 1000; // 90 seconds per game.
+		const GAME_TIME = 90 * 1000; // 90 seconds per game.
 
 		const namedColors = [
 			"aliceblue",
@@ -277,7 +277,7 @@
 		const colorChosenEl = document.querySelector(".color-chosen");
 		const timerEl = document.querySelector(".timer");
 		const scoreEl = document.querySelector(".score");
-		const scoreTimerEl = document.querySelector(".score-timer");
+		const gameTimerEl = document.querySelector(".game-timer");
 
 		let roundTimer = null,
 			gameTimer = null,
@@ -329,7 +329,10 @@
 			initGame();
 
 			setNextColorToGuess();
+
 			const endSignal = startTimer();
+
+			startGameTimer();
 
 			const won = await startEyeDropper(endSignal);
 
@@ -430,23 +433,35 @@
 		}
 
 		function startGameTimer() {
+			const endController = new AbortController();
 			const startTime = Date.now();
 			const endTime = startTime + GAME_TIME;
 
 			function countDown() {
 				const now = Date.now();
-				if (now >= endTime) {
-					clearInterval(gameTimerInterval);
-					playBtn.click();
+
+				if (now - startTime > GAME_TIME) {
+					stopGameTimer();
+
+					endController.abort();
+
 					return;
 				}
 
-				scoreTimerEl.textContent = formatTimeLeft(now - startTime);
+				gameTimerEl.textContent = Math.round(
+					(GAME_TIME - (endTime - now)) / 1000
+				);
 
-				gameTimerInterval = setInterval(countDown, 1000);
+				gameTimer = requestAnimationFrame(countDown);
 			}
 
 			countDown();
+
+			return endController.signal;
+		}
+
+		function stopGameTimer() {
+			cancelAnimationFrame(gameTimer);
 		}
 	</script>
 </body>
