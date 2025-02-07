@@ -90,6 +90,42 @@
 			top: 1rem;
 			right: 1rem;
 		}
+
+		::backdrop {
+			background-image: linear-gradient(
+				45deg,
+				magenta,
+				rebeccapurple,
+				dodgerblue,
+				green
+			);
+			opacity: 0.75;
+		}
+
+		.time-elapsed-modal-title {
+			font-size: 2rem;
+		}
+
+		.time-elapsed-modal-body {
+			display: flex;
+			flex-direction: column;
+			gap: 0.75rem;
+			align-items: center;
+		}
+
+		.time-elapsed-modal-score {
+			font-size: 2.5rem;
+			text-align: center;
+			color: green;
+			display: block;
+		}
+
+		.time-elapsed-restart-btn {
+			padding: 0.5rem 1rem;
+			border: 1px solid silver;
+			background-color: rgb(33, 255, 255);
+			border-radius: 0.25rem;
+		}
 	</style>
 </head>
 
@@ -108,6 +144,21 @@
 		</div>
 		<ul class="named-colors"></ul>
 	</div>
+
+	<dialog id="time-elapsed-modal">
+		<div class="time-elapsed-modal-body">
+			<h1 class="time-elapsed-modal-title">Time's Up! 😅</h1>
+
+			<div>
+				<span>Your score:</span>
+				<br />
+				<span class="time-elapsed-modal-score"></span>
+			</div>
+
+			<button class="time-elapsed-restart-btn">Play again</button>
+		</div>
+	</dialog>
+	<button>Show the dialog</button>
 
 	<script>
 		if (!("EyeDropper" in window)) {
@@ -276,6 +327,15 @@
 		const timerEl = document.querySelector(".timer");
 		const scoreEl = document.querySelector(".score");
 		const gameTimerEl = document.querySelector(".game-timer");
+		const timeElapsedModalEl = document.querySelector(
+			"#time-elapsed-modal"
+		);
+		const timeElapsedModalScoreEl = document.querySelector(
+			".time-elapsed-modal-score"
+		);
+		const timeElapsedModalRestartBtn = document.querySelector(
+			".time-elapsed-restart-btn"
+		);
 
 		let roundTimer = null,
 			gameTimer = null,
@@ -342,7 +402,7 @@
 			playBtn.textContent = "Next";
 		}
 
-		playBtn.addEventListener("click", async () => {
+		function startGame() {
 			if (!endSignal) {
 				endSignal = startGameTimer();
 			}
@@ -350,6 +410,10 @@
 			playBtn.setAttribute("disabled", true);
 
 			startRound(endSignal);
+		}
+
+		playBtn.addEventListener("click", async () => {
+			startGame();
 		});
 
 		function startRoundTimer() {
@@ -443,6 +507,10 @@
 
 					endController.abort();
 
+					timeElapsedModalScoreEl.textContent = score;
+
+					timeElapsedModalEl.showModal();
+
 					return;
 				}
 
@@ -461,5 +529,15 @@
 		function stopGameTimer() {
 			cancelAnimationFrame(gameTimer);
 		}
+
+		timeElapsedModalRestartBtn.addEventListener("click", function () {
+			timeElapsedModalEl.close();
+
+			endSignal = null;
+
+			playBtn.removeAttribute("disabled");
+
+			startGame();
+		});
 	</script>
 </body>
