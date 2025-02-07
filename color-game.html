@@ -13,13 +13,12 @@
 		body {
 			height: 100%;
 			margin: 0;
-			overflow: hidden;
 		}
 
 		.wrapper {
 			height: 100%;
 			display: grid;
-			grid-template-rows: 50% 50%;
+			grid-template-rows: 10rem 10rem;
 		}
 
 		.named-colors {
@@ -29,16 +28,15 @@
 			gap: 2px;
 			background: black;
 			padding: 2px;
-			margin: 5vw;
+			margin: 2rem;
 			border-radius: 3px;
 		}
 
 		.game {
 			display: grid;
 			grid-template-columns: 10vw 10vw 10vw;
-			align-content: center;
 			justify-content: space-evenly;
-			grid-template-rows: 10vw;
+			grid-template-rows: 5.5rem;
 		}
 
 		.color-to-guess,
@@ -120,7 +118,7 @@
 
 		const ROUND_MAX_TIME = 10 * 1000; // 10 seconds per round.
 		const MAX_COLORS = 40; // 20 colors to choose from.
-		const GAME_TIME = 90 * 1000; // 90 seconds per game.
+		const GAME_TIME = 30 * 1000; // 90 seconds per game.
 
 		const namedColors = [
 			"aliceblue",
@@ -281,7 +279,9 @@
 
 		let roundTimer = null,
 			gameTimer = null,
-			selectedNamedColors = [];
+			selectedNamedColors = [],
+			score = 0,
+			endSignal = null;
 
 		function shuffle(array) {
 			let currentIndex = array.length;
@@ -323,38 +323,43 @@
 			}
 		}
 
-		playBtn.addEventListener("click", async () => {
-			playBtn.setAttribute("disabled", true);
-
+		async function startRound(endSignal) {
 			initGame();
 
 			setNextColorToGuess();
 
-			const endSignal = startTimer();
-
-			startGameTimer();
-
 			const won = await startEyeDropper(endSignal);
 
-			stopTimer();
-
 			if (won) {
-				timerEl.textContent = "You won!";
+				timerEl.textContent = "✅";
+				score += 1;
 			} else {
-				timerEl.textContent = "You lost!";
+				timerEl.textContent = "❌";
 			}
 
 			playBtn.removeAttribute("disabled");
+
+			playBtn.textContent = "Next";
+		}
+
+		playBtn.addEventListener("click", async () => {
+			if (!endSignal) {
+				endSignal = startGameTimer();
+			}
+
+			playBtn.setAttribute("disabled", true);
+
+			startRound(endSignal);
 		});
 
-		function startTimer() {
+		function startRoundTimer() {
 			const endController = new AbortController();
 			const startTime = Date.now();
 
 			function countDown() {
 				const now = Date.now();
 				if (now - startTime > ROUND_MAX_TIME) {
-					stopTimer();
+					stopRoundTimer();
 					endController.abort();
 					return;
 				}
@@ -369,7 +374,7 @@
 			return endController.signal;
 		}
 
-		function stopTimer() {
+		function stopRoundTimer() {
 			cancelAnimationFrame(roundTimer);
 		}
 
@@ -397,23 +402,16 @@
 
 		async function startEyeDropper(endSignal) {
 			const eyeDropper = new EyeDropper();
-			let result = null;
 
-			try {
-				const result = await eyeDropper.open({
-					signal: endSignal,
-				});
-				const color = result.sRGBHex;
-				showChosenColor(color);
+			const result = await eyeDropper.open({
+				signal: endSignal,
+			});
 
-				return compareColors(
-					color,
-					colorToGuessEl.style.backgroundColor
-				);
-			} catch (e) {
-				// Lost (either no time left, or escaped).
-				return false;
-			}
+			const color = result.sRGBHex;
+
+			showChosenColor(color);
+
+			return compareColors(color, colorToGuessEl.style.backgroundColor);
 		}
 
 		function compareColors(c1, c2) {
@@ -448,9 +446,9 @@
 					return;
 				}
 
-				gameTimerEl.textContent = Math.round(
-					(GAME_TIME - (endTime - now)) / 1000
-				);
+				gameTimerEl.textContent = Math.round((endTime - now) / 1000);
+
+				scoreEl.textContent = score;
 
 				gameTimer = requestAnimationFrame(countDown);
 			}
