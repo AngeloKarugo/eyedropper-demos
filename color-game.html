@@ -511,6 +511,8 @@
 
 					timeElapsedModalEl.showModal();
 
+					resetScore();
+
 					return;
 				}
 
@@ -539,5 +541,9 @@
 
 			startGame();
 		});
+
+		function resetScore() {
+			score = 0;
+		}
 	</script>
 </body>
